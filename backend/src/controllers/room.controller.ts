@@ -39,7 +39,7 @@ export const joinRoomController: RequestHandler = async(req,res) => {
     try {
         const {code} = req.body
 
-        const result = await pool.query('SELECT * FROM rooms WHERE code = $1 RETURNING *',[code])
+        const result = await pool.query('SELECT * FROM rooms WHERE code = $1',[code])
 
         if(result.rows.length === 0) {
             return res.status(404).json({
@@ -48,8 +48,8 @@ export const joinRoomController: RequestHandler = async(req,res) => {
         }
 
         const room = result.rows[0];
-        return res.status(201).json({
-            message:"room created successfully",
+        return res.status(200).json({
+            message:"room joined successfully",
             data:{
                 roomId: room.id,
                 roomCode: room.code
