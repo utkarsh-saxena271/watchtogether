@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import { randomInt } from "crypto"
 import pool from "../config/db.config.js";
 
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0, O, 1, I, L
+const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 const CODE_LENGTH = 6
 
 export const generateRoomCode = (): string => {

@@ -9,12 +9,11 @@ export function leaveRoom(socket: WebSocket) {
     if (!session?.roomId) return
 
     const roomId = session.roomId
-    delete session.roomId          // dobara leave/close pe double user_left na jaye
+    delete session.roomId
 
     const room = rooms.get(roomId)
     if (!room) return
 
-    // same user's newer tab is in the room, don't remove it
     if (room.participants.get(session.userId)?.socket !== socket) return
 
     room.removeParticipant(session.userId)
@@ -190,20 +189,16 @@ async function eventHandler(data: WebSocket.RawData, socket: WebSocket) {
                     break;
                 }
 
-                // 1. removed user ko pehle batao (baad mein wo room mein nahi hoga)
                 target.socket.send(JSON.stringify({
                     event: 'participant_removed',
                     data: { userId, participants: room.getParticipants() }
                 }))
 
-                // 2. room se hatao aur role bhi bhoolo
                 room.removeParticipant(userId)
                 room.roles.delete(userId)
 
-                // 3. uska connection band karo
                 target.socket.close(4001, 'removed by host')
 
-                // 4. baaki sabko batao
                 room.broadcast('participant_removed', {
                     userId,
                     participants: room.getParticipants()

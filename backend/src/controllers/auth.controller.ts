@@ -104,6 +104,7 @@ export const getMeController: RequestHandler = async (req, res) => {
         return res.status(200).json({
             message: "User fetched successfully",
             data: {
+                id: user.id,
                 username: user.username,
                 email: user.email
             }
