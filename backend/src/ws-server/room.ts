@@ -1,3 +1,4 @@
+import WebSocket from "ws"
 import type { Participant, RoomEvents } from "./types.js"
 
 class Room {
