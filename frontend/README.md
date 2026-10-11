@@ -272,13 +272,13 @@ The login cookie is stored for the **frontend's domain**, but the WebSocket conn
 - **Cross-domain cookies:** solved with the WebSocket ticket described above rather than loosening cookie settings.
 - **`secure` cookie:** enabled only in production so local HTTP development still works.
 - **Free-tier cold starts:** Render free services sleep when idle; the client's retry logic handles the delay.
-- **Idle connections:** hosting proxies can silently drop WebSocket connections that stay idle. A ping/pong heartbeat on the server keeps them alive and detects dead ones.
 
 ---
 
 ## Known limitations and future work
 
 - Live room state is in memory, so it is lost if the backend restarts, and moderator assignments reset once a room becomes empty. Persisting roles and the current video in PostgreSQL would fix this.
+- There is no server-side ping/pong heartbeat. Hosting proxies can drop a WebSocket that stays idle for a long time; if that happens, refreshing or rejoining the room opens a fresh connection. Adding a periodic `ping()` from the server (and terminating sockets that don't answer) would fix this.
 - The backend runs as a single instance. Scaling horizontally would need a Redis pub/sub layer so broadcasts reach sockets on other instances.
 - Not implemented: transfer host, in-room chat, emoji reactions, and a "request approval from host/moderator" flow for participants.
 - The WebSocket server logic lives in a handful of modules (`Room` class plus functions). It could be refactored further into `Participant` and `MessageHandler` classes.
