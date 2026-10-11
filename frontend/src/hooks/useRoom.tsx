@@ -10,6 +10,7 @@ import type {
   Toast,
   ConnectionStatus,
 } from "@/src/lib/types";
+import { ApiError, apiGetWsTicket } from "../lib/api";
 
 type Action =
   | { type: "SET_CONNECTION"; status: ConnectionStatus }
@@ -69,12 +70,31 @@ export function useRoom({ code, userId, onSyncState }: UseRoomOptions) {
     setTimeout(() => dispatch({ type: "REMOVE_TOAST", id }), 3000);
   }, []);
 
-  const connect = useCallback(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3000";
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-    dispatch({ type: "SET_CONNECTION", status: "connecting" });
-
+  const connect = useCallback(async () => {
+    let ticket: string;
+  try {
+    
+    const res = await apiGetWsTicket();
+    ticket = res.data.ticket;
+  } catch (err) {
+  if (intentionalClose.current) return;
+  if (err instanceof ApiError && err.status === 401) {
+    intentionalClose.current = true;
+    const next = `${window.location.pathname}${window.location.search}`;
+    router.replace(`/login?next=${encodeURIComponent(next)}`);
+    return;
+  }
+  dispatch({ type: "SET_CONNECTION", status: "reconnecting" });
+  const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000);
+  reconnectAttempts.current++;
+  reconnectTimer.current = setTimeout(() => connectRef.current(), delay);
+  return;
+}
+ if (intentionalClose.current) return; 
+  const base = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3000";
+  const ws = new WebSocket(`${base}?ticket=${encodeURIComponent(ticket)}`);
+  wsRef.current = ws;
+  dispatch({ type: "SET_CONNECTION", status: "connecting" });
     ws.onopen = () => {
       if (wsRef.current !== ws || intentionalClose.current) return;
       wsSend(ws, { event: "join_room", data: { code } });

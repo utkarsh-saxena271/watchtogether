@@ -116,3 +116,18 @@ export const getMeController: RequestHandler = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" })
     }
 }
+
+export const getWsTicketController: RequestHandler = (req, res) => {
+    try {
+        const { userId } = req.user
+        const ticket = jwt.sign(
+            { userId, purpose: "ws" },
+            process.env.JWT_SECRET!,
+            { expiresIn: "30s" }
+        )
+        return res.status(200).json({ data: { ticket } })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "Internal Server Error" })
+    }
+}

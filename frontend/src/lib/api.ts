@@ -7,6 +7,9 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
+export async function apiGetWsTicket() {
+  return request<{ data: { ticket: string } }>("/api/auth/ws-ticket");
+}
 
 async function request<T>(
   path: string,

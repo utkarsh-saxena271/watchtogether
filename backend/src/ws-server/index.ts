@@ -14,7 +14,8 @@ async function initWSServer(httpServer: http.Server) {
     const wss = new WebSocketServer({ noServer: true })
 
     httpServer.on('upgrade', async (req, socket, head) => {
-        const user = await authenticate(req.headers.cookie)
+        const url = new URL(req.url ?? "/", "http://localhost")
+        const user = await authenticate(url.searchParams.get("ticket"))
 
         if (!user) {
             socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n")
