@@ -7,6 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 interface MenuItem {
   label: string;
@@ -21,19 +22,41 @@ interface MenuProps {
 
 export function Menu({ trigger, items }: MenuProps) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
     if (!open) return;
+    function updatePosition() {
+      const triggerElement = containerRef.current;
+      if (!triggerElement) return;
+      const rect = triggerElement.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
     function onPointerDown(e: PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         close();
       }
     }
+    updatePosition();
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [open, close]);
 
   useEffect(() => {
@@ -53,19 +76,21 @@ export function Menu({ trigger, items }: MenuProps) {
       >
         {trigger}
       </div>
-      {open && (
+      {open && position && createPortal(
         <div
+          ref={menuRef}
           role="menu"
           style={{
-            position: "absolute",
-            right: 0,
-            top: "calc(100% + 4px)",
+            position: "fixed",
+            right: `${position.right}px`,
+            top: `${position.top}px`,
             minWidth: "160px",
             background: "var(--surface)",
             border: "1px solid var(--line)",
             borderRadius: "4px",
-            zIndex: 40,
+            zIndex: 1000,
             overflow: "hidden",
+            fontFamily: "var(--font-geist), system-ui, sans-serif",
           }}
         >
           {items.map((item, i) => (
@@ -82,6 +107,7 @@ export function Menu({ trigger, items }: MenuProps) {
                 padding: "9px 14px",
                 textAlign: "left",
                 fontSize: "13px",
+                fontFamily: "inherit",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
@@ -98,7 +124,8 @@ export function Menu({ trigger, items }: MenuProps) {
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
