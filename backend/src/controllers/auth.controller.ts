@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import pool from "../config/db.config.js";
 
+const isProd = process.env.NODE_ENV === "production"
+
 
 export const signupController: RequestHandler = async (req, res) => {
     try {
@@ -61,7 +63,7 @@ export const loginController: RequestHandler = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             sameSite: "lax",
-            secure: false,
+            secure: isProd,
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
 
@@ -80,7 +82,7 @@ export const logoutController: RequestHandler = async (req, res) => {
         res.clearCookie("token", {
             httpOnly: true,
             sameSite: "lax",
-            secure: false,
+            secure: isProd
         })
         res.status(200).json({
             message: "Logged out successfully"
